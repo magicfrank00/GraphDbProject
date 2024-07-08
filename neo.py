@@ -26,7 +26,8 @@ class Database:
         return result
 
 
-query = "SHOW DATABASES"
-db = Database()
-result = db.query(query)
-print(result)
+if __name__ == "__main__":
+    query = "SHOW DATABASES"
+    db = Database()
+    result = db.query(query)
+    print(result)

@@ -1,13 +1,18 @@
 from neo import SUPPLY_DB, Database
 
 
-db = Database()
-
 # create_db = "CREATE DATABASE " + SUPPLY_DB
 # db.query(create_db) # Not supported for community edition, using default db
 
 # drop db
+import os
 
+os.system(f"rm -rf ./neo_db_data")
+os.system(f"cp -r ./neo_db_data_backup ./neo_db_data")
+
+
+input("DB cleared,restart the db, Press Enter to continue...")
+db = Database()
 
 queries = [
     "CREATE CONSTRAINT FOR (p:Product) REQUIRE p.ID IS UNIQUE;",
@@ -114,7 +119,6 @@ def generate_relationship_query(
             db.query(query)
 
 
-# Example usage
 generate_relationship_query(
     "makes.csv",
     "MAKES",
@@ -142,8 +146,17 @@ generate_relationship_query(
 generate_relationship_query(
     "ships.csv",
     "SHIPS",
-    "Entity",
-    "Entity",
+    "Manufacturer",
+    "Retail",
+    "From_ID",
+    "To_ID",
+    ["N_Items", "Time", "Cost"],
+)
+generate_relationship_query(  # Executed twice, once for suppliers and once for manufacturers
+    "ships.csv",
+    "SHIPS",
+    "Supplier",
+    "Manufacturer",
     "From_ID",
     "To_ID",
     ["N_Items", "Time", "Cost"],

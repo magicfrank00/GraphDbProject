@@ -99,43 +99,36 @@ def generate_offers(retails, product_ids):
     return offers
 
 
-def generate_supplies(suppliers, manufacturers, makes, composes):
+def generate_supplies(manufacturers, products, components, suppliers, composes):
     supplies = []
-    # Create a mapping of components to products
-    component_to_product = {
-        comp["Component_ID"]: comp["Product_ID"] for comp in composes
-    }
-    # Create a mapping of products to manufacturers
-    product_to_manufacturer = {
-        make["Product_ID"]: make["Manufacturer_ID"] for make in makes
-    }
+    # Create a mapping of product ID to the components needed
+    product_to_components = {p["ID"]: [] for p in products}
+    for c in composes:
+        product_to_components[c["Product_ID"]].append(c["Component_ID"])
 
-    for supplier in suppliers:
-        supplied_component = supplier["Component_ID"]
-        assert supplied_component in component_to_product
-        # Find all products that use this component
-        product_ids = [
-            pid
-            for pid, cid in component_to_product.items()
-            if cid == supplied_component
-        ]
-        # Find all manufacturers that make these products
-        manufacturer_ids = list(
-            {
-                product_to_manufacturer[pid]
-                for pid in product_ids
-                if pid in product_to_manufacturer
-            }
-        )
-        for manufacturer_id in manufacturer_ids:
-            supplies.append(
-                {
-                    "Supplier_ID": supplier["ID"],
-                    "Manufacturer_ID": manufacturer_id,
-                    "Component_ID": supplied_component,
-                    "Max_Cap": generate_max_cap(),
-                }
-            )
+    # Create a mapping of manufacturer ID to the products they make
+    manufacturer_to_products = {m["ID"]: [] for m in manufacturers}
+    for m in makes:
+        manufacturer_to_products[m["Manufacturer_ID"]].append(m["Product_ID"])
+
+    for m in manufacturers:
+        # Find all components needed by this manufacturer's products
+        needed_components = set()
+        for p_id in manufacturer_to_products[m["ID"]]:
+            needed_components.update(product_to_components[p_id])
+
+        # Find suppliers who can supply these components
+        for needed_component in needed_components:
+            for s in suppliers:
+                if s["Component_ID"] == needed_component:
+                    supplies.append(
+                        {
+                            "Supplier_ID": s["ID"],
+                            "Manufacturer_ID": m["ID"],
+                            "Component_ID": needed_component,
+                            "Max_Cap": generate_stock(),
+                        }
+                    )
     return supplies
 
 
@@ -205,7 +198,7 @@ retails = generate_retail(retail_ids)
 makes = generate_makes(manufacturers, product_ids)
 composes = generate_composes(components, product_ids)
 offers = generate_offers(retails, product_ids)
-supplies = generate_supplies(suppliers, manufacturers, makes, composes)
+supplies = generate_supplies(manufacturers, products, components, suppliers, composes)
 ships = generate_ships(suppliers, manufacturers, retails, supplies, offers)
 
 

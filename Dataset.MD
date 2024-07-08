@@ -36,7 +36,7 @@
 2. **SUPPLIES** (Supplier to Manufacturer)
 
     - Component_ID (Integer): ID of the component being supplied, linking back to the Component node.
-    - N_Items (Integer): Number of units supplied per delivery.
+    - Max_Cap (Integer): Number of units supplied per delivery.
 
 3. **COMPOSES** (Component to Product)
 
