@@ -146,6 +146,9 @@ def generate_ships(suppliers, manufacturers, retails, supplies, offers):
             }
         )
 
+    shipment_map = (
+        {}
+    )  # used to prevent duplicate shipments (duplicates are for multiple products from the same manufacturer to the same retailer)
     # Generate shipments from manufacturers to retailers
     for offer in offers:
         # Find which manufacturer makes this product
@@ -155,15 +158,23 @@ def generate_ships(suppliers, manufacturers, retails, supplies, offers):
                 for make in makes
                 if make["Product_ID"] == offer["Product_ID"]
             )
-            shipments.append(
-                {
-                    "From_ID": manufacturer_id,
-                    "To_ID": offer["Retail_ID"],
+            key = (manufacturer_id, offer["Retail_ID"])
+            if key not in shipment_map:
+                shipment_map[key] = {
                     "N_Items": generate_stock(),
                     "Time": generate_time(),
                     "Cost": generate_price(),
                 }
-            )
+    for key, value in shipment_map.items():
+        shipments.append(
+            {
+                "From_ID": key[0],
+                "To_ID": key[1],
+                "N_Items": value["N_Items"],
+                "Time": value["Time"],
+                "Cost": value["Cost"],
+            }
+        )
 
     return shipments
 
