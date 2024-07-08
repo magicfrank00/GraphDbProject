@@ -1,2 +1,5 @@
 archive.zip
 .venv
+__pycache__
+neo_db_data
+neo_db_data_backup
