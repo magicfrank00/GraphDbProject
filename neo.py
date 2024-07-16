@@ -1,3 +1,4 @@
+import time
 from neo4j import GraphDatabase
 
 DEFAULT_URI = "bolt://localhost:7687"
@@ -19,9 +20,14 @@ class Database:
     def __del__(self):
         self.close()
 
-    def query(self, query, parameters=None):
+    def query(self, query, parameters=None, log=False):
+        if log:
+            print(f"Query: {query}")
+        start = time.time()
         session = self.driver.session(database=self.db)
         result = list(session.run(query, parameters))
+        if log:
+            print(f"Query took {time.time() - start} seconds")
         session.close()
         return result
 

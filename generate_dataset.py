@@ -23,7 +23,10 @@ def generate_stock():
 
 
 def generate_products(product_ids):
-    return [{"ID": pid, "Sell_Price": generate_price()} for pid in product_ids]
+    return [
+        {"ID": pid, "Sell_Price": generate_price() * PRODUCT_PRICE_MUL}
+        for pid in product_ids
+    ]
 
 
 def generate_components(component_ids):
@@ -35,16 +38,35 @@ def generate_manufacturers(manufacturer_ids):
 
 
 def generate_suppliers(supplier_ids, component_ids):
-    return [
-        {
-            "ID": sid,
-            "Component_ID": random.choice(component_ids),
-            "Price": generate_price(),
-            "Time": generate_time(),
-            "Max_Cap": generate_max_cap(),
-        }
-        for sid in supplier_ids
-    ]
+    provides = {}  # componentID :suppliers[]
+
+    random.shuffle(component_ids)
+    granted = component_ids[: len(supplier_ids)]
+
+    suppliers = []
+    for i, sid in enumerate(supplier_ids):
+        if i < len(granted):
+            component_id = granted[i]
+        else:
+            component_id = random.choice(component_ids)
+        suppliers.append(
+            {
+                "ID": sid,
+                "Component_ID": component_id,
+                "Price": generate_price(),
+                "Time": generate_time(),
+                "Max_Cap": generate_max_cap(),
+            }
+        )
+        if component_id in provides:
+            provides[component_id].append(sid)
+        else:
+            provides[component_id] = [sid]
+    providesList = []
+    for key in provides:
+        for value in provides[key]:
+            providesList.append({"Supplier_ID": value, "Component_ID": key})
+    return suppliers, providesList
 
 
 def generate_retail(retail_ids):
@@ -59,11 +81,23 @@ def generate_ships(n):
 
 
 def generate_makes(manufacturers, product_ids):
+    assert len(product_ids) * MANUFACTURER_X_PROD <= len(manufacturers) * 6
+    assert len(product_ids) * MANUFACTURER_X_PROD >= len(manufacturers) * 2
+    random.shuffle(manufacturers)
+    to_assign = (
+        [*manufacturers]
+        + [*manufacturers]
+        + [*manufacturers]
+        + [*manufacturers]
+        + [*manufacturers]
+        + [*manufacturers]
+    )
     makes = []
-    for m in manufacturers:
-        num_products = random.randint(1, PROD_X_MANUFACTURER)
-        products_chosen = random.sample(product_ids, num_products)
-        for product in products_chosen:
+    for product in product_ids:
+        num_manufacturers = random.randint(1, MANUFACTURER_X_PROD)
+        manufacturers_chosen = to_assign[:num_manufacturers]
+        to_assign = to_assign[num_manufacturers:]
+        for m in manufacturers_chosen:
             makes.append(
                 {
                     "Manufacturer_ID": m["ID"],
@@ -77,13 +111,13 @@ def generate_makes(manufacturers, product_ids):
     return makes
 
 
-def generate_composes(components, product_ids):
+def generate_composes(components_ids, product_ids):
     composes = []
-    for c in components:
-        num_products = random.randint(1, COMP_X_PROD)
-        products_chosen = random.sample(product_ids, num_products)
-        for product in products_chosen:
-            composes.append({"Component_ID": c["ID"], "Product_ID": product})
+    for p in product_ids:
+        num_components = random.randint(1, COMP_X_PROD)
+        components_chosen = random.sample(component_ids, num_components)
+        for component in components_chosen:
+            composes.append({"Component_ID": component, "Product_ID": p})
     return composes
 
 
@@ -125,7 +159,7 @@ def generate_supplies(manufacturers, products, components, suppliers, composes):
                         {
                             "Supplier_ID": s["ID"],
                             "Manufacturer_ID": m["ID"],
-                            "Component_ID": needed_component,
+                            # "Component_ID": needed_component,
                             "Max_Cap": generate_stock(),
                         }
                     )
@@ -147,17 +181,16 @@ def generate_ships(suppliers, manufacturers, retails, supplies, offers):
         )
 
     shipment_map = (
-        {}
+        dict()
     )  # used to prevent duplicate shipments (duplicates are for multiple products from the same manufacturer to the same retailer)
     # Generate shipments from manufacturers to retailers
     for offer in offers:
         # Find which manufacturer makes this product
-        if offer["Product_ID"] in [make["Product_ID"] for make in makes]:
-            manufacturer_id = next(
-                make["Manufacturer_ID"]
-                for make in makes
-                if make["Product_ID"] == offer["Product_ID"]
-            )
+        product = offer["Product_ID"]
+        manufacturer_ids = [
+            make["Manufacturer_ID"] for make in makes if make["Product_ID"] == product
+        ]
+        for manufacturer_id in manufacturer_ids:
             key = (manufacturer_id, offer["Retail_ID"])
             if key not in shipment_map:
                 shipment_map[key] = {
@@ -180,12 +213,11 @@ def generate_ships(suppliers, manufacturers, retails, supplies, offers):
 
 
 # Sample sizes for each entity
-num_products = 50
-num_components = 30
-num_manufacturers = 10
-num_suppliers = 20
+num_products = 30
+num_components = 40
+num_manufacturers = 20
+num_suppliers = 60  # must be greater than num_components
 num_retail = 15
-num_shipments = 100
 
 # Generate IDs for each entity
 product_ids = generate_ids(1, num_products)
@@ -195,19 +227,20 @@ supplier_ids = generate_ids(301, num_suppliers)
 retail_ids = generate_ids(401, num_retail)
 
 # Constants for relationship scaling
-PROD_X_MANUFACTURER = 5  # Max number of products a manufacturer can make
+MANUFACTURER_X_PROD = 4  # Max number of manufacturer a products  can have
 COMP_X_PROD = 3  # Max number of products a component can be part of
+PRODUCT_PRICE_MUL = 12  # Multiplier for product price to have good chances of profit
 
 # Generate data for each entity type
 products = generate_products(product_ids)
 components = generate_components(component_ids)
 manufacturers = generate_manufacturers(manufacturer_ids)
-suppliers = generate_suppliers(supplier_ids, component_ids)
+suppliers, provides = generate_suppliers(supplier_ids, component_ids)
 retails = generate_retail(retail_ids)
 
 # Generate relationships
 makes = generate_makes(manufacturers, product_ids)
-composes = generate_composes(components, product_ids)
+composes = generate_composes(component_ids, product_ids)
 offers = generate_offers(retails, product_ids)
 supplies = generate_supplies(manufacturers, products, components, suppliers, composes)
 ships = generate_ships(suppliers, manufacturers, retails, supplies, offers)
@@ -242,10 +275,15 @@ output_to_csv(offers, dataset_folder + "offers.csv", ["Retail_ID", "Product_ID"]
 output_to_csv(
     supplies,
     dataset_folder + "supplies.csv",
-    ["Supplier_ID", "Manufacturer_ID", "Component_ID", "Max_Cap"],
+    ["Supplier_ID", "Manufacturer_ID", "Max_Cap"],
 )
 output_to_csv(
     ships, dataset_folder + "ships.csv", ["From_ID", "To_ID", "N_Items", "Time", "Cost"]
+)
+output_to_csv(
+    provides,
+    dataset_folder + "provides.csv",
+    ["Supplier_ID", "Component_ID"],
 )
 
 print("Data generation complete. CSV files have been created.")

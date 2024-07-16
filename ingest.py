@@ -31,12 +31,13 @@ dataset_folder = "dataset/"
 
 
 def load_csv_and_generate_queries(csv_filename, node_type, attributes):
+    queries = []
     with open(dataset_folder + csv_filename, newline="") as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             properties = ", ".join([f"{key}: {value}" for key, value in row.items()])
             query = f"CREATE (:{node_type} {{{properties}}});"
-            db.query(query)
+            db.query(query, None, log=True)
 
 
 # Generate queries for creating nodes
@@ -70,6 +71,12 @@ load_csv_and_generate_queries("retails.csv", "Retail", ["ID"])
 
 # # Call the function for 'offers.csv'
 # generate_offers_relationship("offers.csv")
+def is_float(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
 
 
 def generate_relationship_query(
@@ -101,7 +108,7 @@ def generate_relationship_query(
                 [
                     (
                         f'{key}: "{row[key]}"'
-                        if isinstance(row[key], str)
+                        if not row[key].isdigit() and not is_float(row[key])
                         else f"{key}: {row[key]}"
                     )
                     for key in rel_attributes
@@ -115,7 +122,7 @@ def generate_relationship_query(
                           (b:{target_node} {{ID: {target_value}}})
                     CREATE (a)-[:{rel_type} {{{properties}}}]->(b);
                     """
-            print(query)
+            # print(query)
             db.query(query)
 
 
@@ -135,7 +142,7 @@ generate_relationship_query(
     "Manufacturer",
     "Supplier_ID",
     "Manufacturer_ID",
-    ["Component_ID", "Max_Cap"],
+    ["Max_Cap"],
 )
 generate_relationship_query(
     "composes.csv", "COMPOSES", "Component", "Product", "Component_ID", "Product_ID"
@@ -160,4 +167,12 @@ generate_relationship_query(  # Executed twice, once for suppliers and once for 
     "From_ID",
     "To_ID",
     ["N_Items", "Time", "Cost"],
+)
+generate_relationship_query(
+    "provides.csv",
+    "PROVIDES",
+    "Supplier",
+    "Component",
+    "Supplier_ID",
+    "Component_ID",
 )

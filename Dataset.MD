@@ -35,7 +35,8 @@
 
 2. **SUPPLIES** (Supplier to Manufacturer)
 
-    - Component_ID (Integer): ID of the component being supplied, linking back to the Component node.
+    <!-- - Component_ID (Integer): ID of the component being supplied, linking back to the Component node. -->
+
     - Max_Cap (Integer): Number of units supplied per delivery.
 
 3. **COMPOSES** (Component to Product)
@@ -46,7 +47,11 @@
 
     - No attributes, indicating which products are offered by a retail entity.
 
-5. **Ships** (Either from Supplier to Manufacturer or from Manufacturer to Retail)
+5. **SHIPS** (Either from Supplier to Manufacturer or from Manufacturer to Retail)
     - N_Items (Integer): Number of items per container.
     - Time (Integer): Time taken for the shipment from source to destination.
     - Cost (Float): Cost of the shipment.
+
+6 **PROVIDES** (Supplier to component)
+
+    - No attributes, simply indicates which component is provided by a supplier.
