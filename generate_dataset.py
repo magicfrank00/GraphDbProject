@@ -52,7 +52,7 @@ def generate_suppliers(supplier_ids, component_ids):
         suppliers.append(
             {
                 "ID": sid,
-                "Component_ID": component_id,
+                # "Component_ID": component_id,
                 "Price": generate_price(),
                 "Time": generate_time(),
                 "Max_Cap": generate_max_cap(),
@@ -133,7 +133,10 @@ def generate_offers(retails, product_ids):
     return offers
 
 
-def generate_supplies(manufacturers, products, components, suppliers, composes):
+def generate_supplies(
+    manufacturers, products, components, suppliers, composes, provides
+):
+    provides_map = {x["Supplier_ID"]: x["Component_ID"] for x in provides}
     supplies = []
     # Create a mapping of product ID to the components needed
     product_to_components = {p["ID"]: [] for p in products}
@@ -154,7 +157,7 @@ def generate_supplies(manufacturers, products, components, suppliers, composes):
         # Find suppliers who can supply these components
         for needed_component in needed_components:
             for s in suppliers:
-                if s["Component_ID"] == needed_component:
+                if provides_map[s["ID"]] == needed_component:
                     supplies.append(
                         {
                             "Supplier_ID": s["ID"],
@@ -167,10 +170,10 @@ def generate_supplies(manufacturers, products, components, suppliers, composes):
 
 
 def generate_ships(suppliers, manufacturers, retails, supplies, offers):
-    shipments = []
+    shipments_supply = []
     # Generate shipments from suppliers to manufacturers
     for supply in supplies:
-        shipments.append(
+        shipments_supply.append(
             {
                 "From_ID": supply["Supplier_ID"],
                 "To_ID": supply["Manufacturer_ID"],
@@ -179,6 +182,7 @@ def generate_ships(suppliers, manufacturers, retails, supplies, offers):
                 "Cost": generate_price(),
             }
         )
+    shipments_manufacture = []
 
     shipment_map = (
         dict()
@@ -199,7 +203,7 @@ def generate_ships(suppliers, manufacturers, retails, supplies, offers):
                     "Cost": generate_price(),
                 }
     for key, value in shipment_map.items():
-        shipments.append(
+        shipments_manufacture.append(
             {
                 "From_ID": key[0],
                 "To_ID": key[1],
@@ -209,7 +213,7 @@ def generate_ships(suppliers, manufacturers, retails, supplies, offers):
             }
         )
 
-    return shipments
+    return shipments_supply, shipments_manufacture
 
 
 # Sample sizes for each entity
@@ -242,8 +246,12 @@ retails = generate_retail(retail_ids)
 makes = generate_makes(manufacturers, product_ids)
 composes = generate_composes(component_ids, product_ids)
 offers = generate_offers(retails, product_ids)
-supplies = generate_supplies(manufacturers, products, components, suppliers, composes)
-ships = generate_ships(suppliers, manufacturers, retails, supplies, offers)
+supplies = generate_supplies(
+    manufacturers, products, components, suppliers, composes, provides
+)
+shipments_supply, shipments_manufacture = generate_ships(
+    suppliers, manufacturers, retails, supplies, offers
+)
 
 
 # Output data to CSV, optional
@@ -262,7 +270,7 @@ output_to_csv(manufacturers, dataset_folder + "manufacturers.csv", ["ID"])
 output_to_csv(
     suppliers,
     dataset_folder + "suppliers.csv",
-    ["ID", "Component_ID", "Price", "Time", "Max_Cap"],
+    ["ID", "Price", "Time", "Max_Cap"],
 )
 output_to_csv(retails, dataset_folder + "retails.csv", ["ID"])
 output_to_csv(
@@ -278,7 +286,19 @@ output_to_csv(
     ["Supplier_ID", "Manufacturer_ID", "Max_Cap"],
 )
 output_to_csv(
-    ships, dataset_folder + "ships.csv", ["From_ID", "To_ID", "N_Items", "Time", "Cost"]
+    shipments_supply,
+    dataset_folder + "ships_supply.csv",
+    ["From_ID", "To_ID", "N_Items", "Time", "Cost"],
+)
+output_to_csv(
+    shipments_manufacture,
+    dataset_folder + "ships_manufacture.csv",
+    ["From_ID", "To_ID", "N_Items", "Time", "Cost"],
+)
+output_to_csv(
+    shipments_manufacture + shipments_supply,
+    dataset_folder + "ships.csv",
+    ["From_ID", "To_ID", "N_Items", "Time", "Cost"],
 )
 output_to_csv(
     provides,
