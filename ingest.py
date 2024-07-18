@@ -13,6 +13,8 @@ drop = True
 
 if drop:
     drop_db()
+    input("DB cleared,restart the db, Press Enter to continue...")
+
     db = Database()
 
     queries = [

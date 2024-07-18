@@ -1,7 +1,9 @@
 import os
 import shutil
 import csv
+import time
 
+start = time.time()
 # Define your directories
 dataset_folder = "dataset/"
 ingest_folder = "dataset_ingest/"
@@ -76,3 +78,5 @@ for file, headers in files_headers.items():
     process_file(file, headers)
 
 print("Processing complete. Files have been moved and headers have been created.")
+
+print(f"Time taken: {time.time() - start} seconds")

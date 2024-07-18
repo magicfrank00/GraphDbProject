@@ -24,7 +24,8 @@ class Database:
         session = self.driver.session(database=self.db)
         result = list(session.run(query, parameters))
         session.close()
-        return result
+        if result:
+            return [record.data() for record in result]
 
     def batch_query(self, queries, parameters):
         session = self.driver.session(database=self.db)

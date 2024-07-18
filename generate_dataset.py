@@ -1,5 +1,6 @@
 import random
 import csv
+import time
 
 
 def generate_ids(start, count):
@@ -81,17 +82,20 @@ def generate_ships(n):
 
 
 def generate_makes(manufacturers, product_ids):
-    assert len(product_ids) * MANUFACTURER_X_PROD <= len(manufacturers) * 6
+    assert len(product_ids) * MANUFACTURER_X_PROD <= len(manufacturers) * 6 * N
     assert len(product_ids) * MANUFACTURER_X_PROD >= len(manufacturers) * 2
     random.shuffle(manufacturers)
-    to_assign = (
-        [*manufacturers]
-        + [*manufacturers]
-        + [*manufacturers]
-        + [*manufacturers]
-        + [*manufacturers]
-        + [*manufacturers]
-    )
+    # to_assign = (
+    #     [*manufacturers]
+    #     + [*manufacturers]
+    #     + [*manufacturers]
+    #     + [*manufacturers]
+    #     + [*manufacturers]
+    #     + [*manufacturers]
+    #     *N
+    # )
+    to_assign = [*manufacturers] * 6 * N
+
     makes = []
     for product in product_ids:
         num_manufacturers = random.randint(1, MANUFACTURER_X_PROD)
@@ -134,10 +138,11 @@ def generate_offers(retails, product_ids):
 
 
 def generate_supplies(
-    manufacturers, products, components, suppliers, composes, provides
+    manufacturers, products, components, suppliers, composes, provides, makes
 ):
+    # Create a mapping of Supplier ID to the components they provide
     provides_map = {x["Supplier_ID"]: x["Component_ID"] for x in provides}
-    supplies = []
+
     # Create a mapping of product ID to the components needed
     product_to_components = {p["ID"]: [] for p in products}
     for c in composes:
@@ -148,92 +153,109 @@ def generate_supplies(
     for m in makes:
         manufacturer_to_products[m["Manufacturer_ID"]].append(m["Product_ID"])
 
+    # Initialize a mapping of needed components to their potential suppliers
+    component_to_suppliers = {c["ID"]: [] for c in components}
+    for s in suppliers:
+        if s["ID"] in provides_map:
+            component_to_suppliers[provides_map[s["ID"]]].append(s["ID"])
+
+    # Generate supplies list
+    supplies = []
     for m in manufacturers:
         # Find all components needed by this manufacturer's products
         needed_components = set()
         for p_id in manufacturer_to_products[m["ID"]]:
             needed_components.update(product_to_components[p_id])
 
-        # Find suppliers who can supply these components
-        for needed_component in needed_components:
-            for s in suppliers:
-                if provides_map[s["ID"]] == needed_component:
-                    supplies.append(
-                        {
-                            "Supplier_ID": s["ID"],
-                            "Manufacturer_ID": m["ID"],
-                            # "Component_ID": needed_component,
-                            "Max_Cap": generate_stock(),
-                        }
-                    )
+        # For each needed component, find suppliers who can supply this component
+        for component in needed_components:
+            for supplier_id in component_to_suppliers[component]:
+                supplies.append(
+                    {
+                        "Supplier_ID": supplier_id,
+                        "Manufacturer_ID": m["ID"],
+                        # "Component_ID": component,
+                        "Max_Cap": generate_stock(),  # Assuming generate_stock() is defined elsewhere
+                    }
+                )
     return supplies
 
 
-def generate_ships(suppliers, manufacturers, retails, supplies, offers):
-    shipments_supply = []
+def generate_ships(suppliers, manufacturers, retails, supplies, offers, makes):
     # Generate shipments from suppliers to manufacturers
-    for supply in supplies:
-        shipments_supply.append(
-            {
-                "From_ID": supply["Supplier_ID"],
-                "To_ID": supply["Manufacturer_ID"],
-                "N_Items": generate_stock(),
-                "Time": generate_time(),
-                "Cost": generate_price(),
-            }
-        )
-    shipments_manufacture = []
+    shipments_supply = [
+        {
+            "From_ID": supply["Supplier_ID"],
+            "To_ID": supply["Manufacturer_ID"],
+            "N_Items": generate_stock(),
+            "Time": generate_time(),
+            "Cost": generate_price(),
+        }
+        for supply in supplies
+    ]
 
-    shipment_map = (
-        dict()
-    )  # used to prevent duplicate shipments (duplicates are for multiple products from the same manufacturer to the same retailer)
-    # Generate shipments from manufacturers to retailers
+    # Create a hashmap for products to manufacturers
+    product_to_manufacturers = {}
+    for make in makes:
+        if make["Product_ID"] not in product_to_manufacturers:
+            product_to_manufacturers[make["Product_ID"]] = []
+        product_to_manufacturers[make["Product_ID"]].append(make["Manufacturer_ID"])
+
+    # Generate shipments from manufacturers to retailers without duplicates
+    shipment_map = {}
     for offer in offers:
-        # Find which manufacturer makes this product
-        product = offer["Product_ID"]
-        manufacturer_ids = [
-            make["Manufacturer_ID"] for make in makes if make["Product_ID"] == product
-        ]
-        for manufacturer_id in manufacturer_ids:
-            key = (manufacturer_id, offer["Retail_ID"])
-            if key not in shipment_map:
-                shipment_map[key] = {
-                    "N_Items": generate_stock(),
-                    "Time": generate_time(),
-                    "Cost": generate_price(),
-                }
-    for key, value in shipment_map.items():
-        shipments_manufacture.append(
-            {
-                "From_ID": key[0],
-                "To_ID": key[1],
-                "N_Items": value["N_Items"],
-                "Time": value["Time"],
-                "Cost": value["Cost"],
-            }
-        )
+        product_id = offer["Product_ID"]
+        retail_id = offer["Retail_ID"]
+
+        if product_id in product_to_manufacturers:
+            for manufacturer_id in product_to_manufacturers[product_id]:
+                key = (manufacturer_id, retail_id)
+                if key not in shipment_map:
+                    shipment_map[key] = {
+                        "N_Items": generate_stock(),
+                        "Time": generate_time(),
+                        "Cost": generate_price(),
+                    }
+
+    shipments_manufacture = [
+        {
+            "From_ID": key[0],
+            "To_ID": key[1],
+            "N_Items": value["N_Items"],
+            "Time": value["Time"],
+            "Cost": value["Cost"],
+        }
+        for key, value in shipment_map.items()
+    ]
 
     return shipments_supply, shipments_manufacture
 
 
+start = time.time()
+random.seed(1)
+
+N = 100
 # Sample sizes for each entity
-num_products = 30
-num_components = 40
-num_manufacturers = 20
-num_suppliers = 60  # must be greater than num_components
-num_retail = 15
+num_products = 30 * N
+num_components = 40 * N
+num_manufacturers = 20 * N
+num_suppliers = 60 * N  # must be greater than num_components
+num_retail = 15 * N
+# Constants for relationship scaling
+MANUFACTURER_X_PROD = 4 * N  # Max number of manufacturer a products  can have
+COMP_X_PROD = 3 * N  # Max number of products a component can be part of
+PRODUCT_PRICE_MUL = (
+    12 * N
+)  # Multiplier for product price to have good chances of profit
 
 # Generate IDs for each entity
-product_ids = generate_ids(1, num_products)
-component_ids = generate_ids(101, num_components)
-manufacturer_ids = generate_ids(201, num_manufacturers)
-supplier_ids = generate_ids(301, num_suppliers)
-retail_ids = generate_ids(401, num_retail)
+product_ids = generate_ids(1 * N, num_products)
+component_ids = generate_ids(101 * N, num_components)
+manufacturer_ids = generate_ids(201 * N, num_manufacturers)
+supplier_ids = generate_ids(301 * N, num_suppliers)
+retail_ids = generate_ids(401 * N, num_retail)
 
-# Constants for relationship scaling
-MANUFACTURER_X_PROD = 4  # Max number of manufacturer a products  can have
-COMP_X_PROD = 3  # Max number of products a component can be part of
-PRODUCT_PRICE_MUL = 12  # Multiplier for product price to have good chances of profit
+print(f"ID generation took {time.time() - start} seconds")
 
 # Generate data for each entity type
 products = generate_products(product_ids)
@@ -242,16 +264,25 @@ manufacturers = generate_manufacturers(manufacturer_ids)
 suppliers, provides = generate_suppliers(supplier_ids, component_ids)
 retails = generate_retail(retail_ids)
 
+print(f"Data generation took {time.time() - start} seconds")
+
 # Generate relationships
 makes = generate_makes(manufacturers, product_ids)
+print(f"makes generation took {time.time() - start} seconds")
 composes = generate_composes(component_ids, product_ids)
+print(f"composes generation took {time.time() - start} seconds")
 offers = generate_offers(retails, product_ids)
+print(f"offers generation took {time.time() - start} seconds")
 supplies = generate_supplies(
-    manufacturers, products, components, suppliers, composes, provides
+    manufacturers, products, components, suppliers, composes, provides, makes
 )
+print(f"supplies generation took {time.time() - start} seconds")
 shipments_supply, shipments_manufacture = generate_ships(
-    suppliers, manufacturers, retails, supplies, offers
+    suppliers, manufacturers, retails, supplies, offers, makes
 )
+print(f"shipments generation took {time.time() - start} seconds")
+
+print(f"Data generation took {time.time() - start} seconds")
 
 
 # Output data to CSV, optional
@@ -306,4 +337,8 @@ output_to_csv(
     ["Supplier_ID", "Component_ID"],
 )
 
-print("Data generation complete. CSV files have been created.")
+print(
+    "CSV  generation took",
+    time.time() - start,
+    "seconds",
+)
