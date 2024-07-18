@@ -1,3 +1,5 @@
+import time
+from drop_db import drop_db
 from neo import SUPPLY_DB, Database
 
 
@@ -7,27 +9,32 @@ from neo import SUPPLY_DB, Database
 # drop db
 import os
 
-os.system(f"rm -rf ./neo_db_data")
-os.system(f"cp -r ./neo_db_data_backup ./neo_db_data")
+drop = True
 
+if drop:
+    drop_db()
+    db = Database()
 
-input("DB cleared,restart the db, Press Enter to continue...")
-db = Database()
+    queries = [
+        "CREATE CONSTRAINT FOR (p:Product) REQUIRE p.ID IS UNIQUE;",
+        "CREATE CONSTRAINT FOR (c:Component) REQUIRE c.ID IS UNIQUE;",
+        "CREATE CONSTRAINT FOR (m:Manufacturer) REQUIRE m.ID IS UNIQUE;",
+        "CREATE CONSTRAINT FOR (s:Supplier) REQUIRE s.ID IS UNIQUE;",
+        "CREATE CONSTRAINT FOR (r:Retail) REQUIRE r.ID IS UNIQUE;",
+    ]
 
-queries = [
-    "CREATE CONSTRAINT FOR (p:Product) REQUIRE p.ID IS UNIQUE;",
-    "CREATE CONSTRAINT FOR (c:Component) REQUIRE c.ID IS UNIQUE;",
-    "CREATE CONSTRAINT FOR (m:Manufacturer) REQUIRE m.ID IS UNIQUE;",
-    "CREATE CONSTRAINT FOR (s:Supplier) REQUIRE s.ID IS UNIQUE;",
-    "CREATE CONSTRAINT FOR (r:Retail) REQUIRE r.ID IS UNIQUE;",
-]
+    for query in queries:
+        db.query(query)
+else:
+    db = Database()
 
-for query in queries:
-    db.query(query)
 
 import csv
 
 dataset_folder = "dataset/"
+
+
+start = time.time()
 
 
 def load_csv_and_generate_queries(csv_filename, node_type, attributes):
@@ -36,8 +43,9 @@ def load_csv_and_generate_queries(csv_filename, node_type, attributes):
         reader = csv.DictReader(csvfile)
         for row in reader:
             properties = ", ".join([f"{key}: {value}" for key, value in row.items()])
-            query = f"CREATE (:{node_type} {{{properties}}});"
-            db.query(query, None, log=True)
+            query = f"CREATE (:{node_type} {{{properties}}})"
+            queries.append(query)
+    db.query("\n".join(queries), None, log=True)
 
 
 # Generate queries for creating nodes
@@ -45,10 +53,10 @@ load_csv_and_generate_queries("products.csv", "Product", ["ID", "Sell_Price"])
 load_csv_and_generate_queries("components.csv", "Component", ["ID"])
 load_csv_and_generate_queries("manufacturers.csv", "Manufacturer", ["ID"])
 load_csv_and_generate_queries(
-    "suppliers.csv", "Supplier", ["ID", "Component_ID", "Price", "Time", "Max_Cap"]
+    "suppliers.csv", "Supplier", ["ID", "Price", "Time", "Max_Cap"]
 )
 load_csv_and_generate_queries("retails.csv", "Retail", ["ID"])
-
+print(f"Creating nodes took {time.time() - start} seconds")
 
 # def generate_offers_relationship(csv_filename):
 #     with open(dataset_folder + csv_filename, newline="") as csvfile:
@@ -89,6 +97,7 @@ def generate_relationship_query(
     rel_attributes=[],
 ):
     with open(dataset_folder + csv_filename, newline="") as csvfile:
+        queries = []
         reader = csv.DictReader(csvfile)
         for row in reader:
             # Properly format the keys for source and target based on their data type
@@ -123,9 +132,13 @@ def generate_relationship_query(
                     CREATE (a)-[:{rel_type} {{{properties}}}]->(b);
                     """
             # print(query)
-            db.query(query)
+            queries.append(query)
+        db.batch_query(
+            queries,
+        )
 
 
+start = time.time()
 generate_relationship_query(
     "makes.csv",
     "MAKES",
@@ -176,3 +189,4 @@ generate_relationship_query(
     "Supplier_ID",
     "Component_ID",
 )
+print(f"Creating relationships took {time.time() - start} seconds")

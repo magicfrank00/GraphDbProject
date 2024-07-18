@@ -20,16 +20,19 @@ class Database:
     def __del__(self):
         self.close()
 
-    def query(self, query, parameters=None, log=False):
-        if log:
-            print(f"Query: {query}")
-        start = time.time()
+    def query(self, query, parameters=None):
         session = self.driver.session(database=self.db)
         result = list(session.run(query, parameters))
-        if log:
-            print(f"Query took {time.time() - start} seconds")
         session.close()
         return result
+
+    def batch_query(self, queries, parameters):
+        session = self.driver.session(database=self.db)
+        tx = session.begin_transaction()
+        for query, p in zip(queries, parameters):
+            tx.run(query, p)
+        tx.commit()
+        session.close()
 
 
 if __name__ == "__main__":
