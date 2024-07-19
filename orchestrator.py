@@ -11,8 +11,6 @@ supplier_ids = [301 * N, 301 * N + num_suppliers]
 product_ids = [1 * N, 1 * N + num_products]
 retail_ids = [401 * N, 401 * N + num_retail]
 
-dataset_folder = "dataset/"
-
 
 def load_csv_get_offers():
     with open(dataset_folder + "offers.csv", newline="") as csvfile:

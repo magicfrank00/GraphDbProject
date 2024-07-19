@@ -2,11 +2,11 @@ import os
 import shutil
 import csv
 import time
+from constants import dataset_folder
 
 start = time.time()
 # Define your directories
-dataset_folder = "dataset/"
-ingest_folder = "dataset_ingest/"
+ingest_folder = dataset_folder[:-1] + "_ingest/"
 
 # Ensure the ingest folder exists
 if not os.path.exists(ingest_folder):

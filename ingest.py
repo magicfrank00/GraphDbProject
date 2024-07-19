@@ -1,7 +1,7 @@
 import time
 from drop_db import drop_db
 from neo import SUPPLY_DB, Database
-
+from constants import dataset_folder
 
 # create_db = "CREATE DATABASE " + SUPPLY_DB
 # db.query(create_db) # Not supported for community edition, using default db
@@ -33,7 +33,6 @@ else:
 
 import csv
 
-dataset_folder = "dataset/"
 
 
 start = time.time()

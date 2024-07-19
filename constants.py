@@ -1,4 +1,6 @@
 N = 100
+dataset_folder = "dataset/"
+
 # Sample sizes for each entity
 num_products = 30 * N
 num_components = 40 * N

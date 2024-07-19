@@ -281,7 +281,6 @@ def output_to_csv(data, filename, fieldnames):
         writer.writerows(data)
 
 
-dataset_folder = "dataset/"
 # Specify the CSV filenames and fields
 output_to_csv(products, dataset_folder + "products.csv", ["ID", "Sell_Price"])
 output_to_csv(components, dataset_folder + "components.csv", ["ID"])

@@ -1,7 +1,7 @@
 import csv
 import time
 from database_core_pg import DatabasePg
-
+from constants import *
 
 db = DatabasePg()
 tables = [
@@ -185,7 +185,6 @@ def load_csv_to_db(filename, table_name, columns):
 
 start = time.time()
 # Load data into tables
-dataset_folder = "dataset/"
 
 load_csv_to_db(dataset_folder + "products.csv", "products", ["ID", "Sell_Price"])
 load_csv_to_db(dataset_folder + "components.csv", "components", ["ID"])
