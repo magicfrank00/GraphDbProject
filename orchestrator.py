@@ -1,20 +1,26 @@
+import csv
 import random
 from redis_queue import Queue
 import time
+from constants import *
 
 random.seed(0)
-
-N = 100
-
-num_products = 30 * N
-num_retail = 15 * N
-num_manufacturers = 20 * N
-num_suppliers = 60 * N
 
 manufacturer_ids = [201 * N, 201 * N + num_manufacturers]
 supplier_ids = [301 * N, 301 * N + num_suppliers]
 product_ids = [1 * N, 1 * N + num_products]
 retail_ids = [401 * N, 401 * N + num_retail]
+
+dataset_folder = "dataset/"
+
+
+def load_csv_get_offers():
+    with open(dataset_folder + "offers.csv", newline="") as csvfile:
+        reader = csv.DictReader(csvfile)
+        return [row.values() for row in reader]
+
+
+offers = load_csv_get_offers()
 
 
 class Orchestrator:
@@ -23,13 +29,14 @@ class Orchestrator:
         self.pg_queue = Queue("pg_queue")
 
     def generate_order(self):
-        retailer_id = random.randint(*retail_ids)
-        product_id = random.randint(*product_ids)
+        # retailer_id = random.randint(*retail_ids)
+        # product_id = random.randint(*product_ids)
+        retailer_id, product_id = random.choice(offers)
         quantity = random.randint(1, 10)
         return {
             "type": "order",
-            "retailer_id": retailer_id,
-            "product_id": product_id,
+            "retailer_id": int(retailer_id),
+            "product_id": int(product_id),
             "quantity": quantity,
         }
 

@@ -8,15 +8,19 @@ def dequeue_loop(q: Queue, manager: Manager):
     while True:
         instruction = q.dequeue()
         if instruction:
+            again = True
             instruction = eval(instruction)
             print(f"Processing instruction: {instruction}")
             input("Press Enter to continue...")
-            start = time.time()
-            if instruction["type"] == "order":
-                manager.order(instruction["retailer_id"], instruction["product_id"])
-            elif instruction["type"] == "drop":
-                manager.drop(instruction["id"], instruction["label"])
-            print(f"Processed instruction in {time.time() - start} seconds")
+
+            while again:
+                start = time.time()
+                if instruction["type"] == "order":
+                    manager.order(instruction["retailer_id"], instruction["product_id"])
+                elif instruction["type"] == "drop":
+                    manager.drop(instruction["id"], instruction["label"])
+                print(f"Processed instruction in {time.time() - start} seconds")
+                again = input("Process again? (y/n) ") == "y"
         time.sleep(1)
 
 

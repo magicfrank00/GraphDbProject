@@ -77,6 +77,7 @@ aggregated_data AS (
         JOIN component_suppliers cs ON sup.Supplier_ID = cs.supplier_id
         JOIN ships_to_manufacturer stm ON cs.supplier_id = stm.supplier_id AND mk.ID = stm.manufacturer_id
         JOIN ships_to_retail str ON mk.ID = str.manufacturer_id AND r.ID = str.retail_id
+        JOIN offers o ON r.ID = o.retail_id AND p.ID = o.product_id
     GROUP BY
         r.ID, p.ID, mk.ID, mk.manufacturing_cost, mk.manufacturing_time, mk.max_manufacturing_cap, str.ship_man_time, str.ship_man_cost, str.ship_man_cap
 ),
