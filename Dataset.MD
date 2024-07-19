@@ -16,7 +16,7 @@
 4. **Supplier**
 
     - ID (Integer): Unique identifier for each supplier.
-    - Component_ID (Integer): ID of the component they supply. This creates a direct link to the Component node.
+      <!-- - Component_ID (Integer): ID of the component they supply. This creates a direct link to the Component node. -->
     - Price (Float): Price at which the supplier provides the component.
     - Time (Integer): Time taken to deliver the component.
     - Max_Cap (Integer): Maximum capacity of components the supplier can deliver in a specific time frame.

@@ -1,12 +1,10 @@
 import time
 from neo import Database
 from order_query import order_query
-import random
-
-random.seed(0)
+from imanager import Manager
 
 
-class Orchestrator:
+class ManagerNeo(Manager):
     def __init__(self):
         self.db = Database()
 
@@ -27,13 +25,13 @@ class Orchestrator:
 
 
 if __name__ == "__main__":
-    orchestrator = Orchestrator()
+    orchestrator = ManagerNeo()
     retailer_id = 41536
     product_id = 119
     start = time.time()
     records = orchestrator.order(retailer_id, product_id)
-    to_drop = records[0]["manufacturer"]["ID"]
-    orchestrator.drop(to_drop, "Manufacturer")
-    records = orchestrator.order(retailer_id, product_id)
+    # to_drop = records[0]["manufacturer"]["ID"]
+    # orchestrator.drop(to_drop, "Manufacturer")
+    # records = orchestrator.order(retailer_id, product_id)
 
     print(f"Query took {time.time() - start} seconds")
