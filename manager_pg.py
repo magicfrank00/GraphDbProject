@@ -11,6 +11,9 @@ class ManagerPg(Manager):
     def __del__(self):
         self.db.close()
 
+    def name(self):
+        return "pg"
+
     def order(self, retailer_id, product_id):
         params = (retailer_id, product_id, product_id, product_id)
         best_picks = self.db.query(order_sql_query, params)

@@ -13,3 +13,6 @@ COMP_X_PROD = 3 * N  # Max number of products a component can be part of
 PRODUCT_PRICE_MUL = (
     12 * N
 )  # Multiplier for product price to have good chances of profit
+TIME_FACTOR = 10000
+
+INTERACTIVE = False

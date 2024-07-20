@@ -49,7 +49,7 @@ class Orchestrator:
         return {"type": "drop", "id": id, "label": label}
 
     def generate_action(self):
-        if random.random() < 1:
+        if random.random() < 0.8:
             return self.generate_order()
         return self.generate_drop()
 
@@ -59,8 +59,9 @@ class Orchestrator:
             self.neo_queue.enqueue(str(action))
             self.pg_queue.enqueue(str(action))
             print(f"Enqueued action: {action}")
-            time.sleep(3)
-            input("Press Enter to continue...")
+            time.sleep(1)
+            if INTERACTIVE:
+                input("Press Enter to continue...")
 
 
 if __name__ == "__main__":
