@@ -13,9 +13,10 @@ def log_notice(diag):
 
 
 class DatabasePg:
-    def __init__(self):
+    def __init__(self, db_name="supply_chain"):
         self.connection = None
         self.cursor = None
+        self.db_name = db_name
         self.open()
 
     def __del__(self):
@@ -30,7 +31,7 @@ class DatabasePg:
                     port="5433",  # 5432
                     user="supply_chain_user",
                     password=database_pwd,
-                    dbname="supply_chain",
+                    dbname=self.db_name,
                     keepalives=1,
                     keepalives_idle=5,
                     keepalives_interval=2,
