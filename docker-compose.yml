@@ -1,0 +1,81 @@
+version: "3.8"
+
+services:
+    redis:
+        image: redis:latest
+        ports:
+            - "6379:6379"
+
+    neo4j:
+        image: neo4j:latest
+        ports:
+            - "7474:7474"
+            - "7687:7687"
+        environment:
+            NEO4J_AUTH: neo4j/galileo-ski-watch-orchid-plate-1558
+            NEO4J_dbms_directories_data: /data/neo4j_data
+        volumes:
+            - ./neo_db_data:/data/neo4j_data
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:7471"]
+            interval: 5s
+            timeout: 3s
+            retries: 8
+
+    orchestrator:
+        build:
+            context: ./
+            dockerfile: ./orchestrator/Dockerfile
+        depends_on:
+            - redis
+        environment:
+            REDIS_HOST: redis
+            REDIS_PORT: 6379
+
+    dequeue_neo:
+        build:
+            context: ./
+            dockerfile: ./dequeue/Dockerfile
+        environment:
+            REDIS_HOST: redis
+            REDIS_PORT: 6379
+            DB_TYPE: neo
+            NEO_HOST: bolt://neo4j:7687
+        depends_on:
+            - redis
+            - neo4j
+
+    dequeue_pg:
+        build:
+            context: ./
+            dockerfile: ./dequeue/Dockerfile
+        environment:
+            REDIS_HOST: redis
+            REDIS_PORT: 6379
+            DB_TYPE: pg
+            PG_HOST: postgres
+            PG_PORT: 5432
+        depends_on:
+            - redis
+            - postgres
+        restart: on-failure
+
+    postgres:
+        image: postgres:15
+        environment:
+            POSTGRES_USER: supply_chain_user
+            POSTGRES_PASSWORD: galileo-ski-watch-orchid-plate-1558
+            POSTGRES_DB: supply_chain
+        volumes:
+            - /var/lib/postgresql/15/main:/var/lib/postgresql/data
+            - ./postgres:/etc/postgresql
+        ports:
+            - "5432:5432"
+        command:
+            ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+
+    redis_flush:
+        image: redis:latest
+        depends_on:
+            - redis
+        entrypoint: ["redis-cli", "-h", "redis", "FLUSHALL"]

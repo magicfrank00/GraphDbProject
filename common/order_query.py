@@ -5,7 +5,7 @@ WITH retail, product
 
 // Find all manufacturers making the product
 MATCH (manufacturer:Manufacturer)-[makes:MAKES]->(product)
-WITH retail, product, manufacturer, makes
+WITH retail, product, manufacturer, makes ORDER BY manufacturer.ID LIMIT 6
 
 // Find all suppliers for the components of the product
 MATCH (product)<-[:COMPOSES]-(component:Component)<-[:PROVIDES]-(supplier:Supplier)

@@ -1,6 +1,10 @@
+import os
 from constants import INTERACTIVE, TIME_FACTOR
 from redis_queue import Queue
 import time
+import sys
+from manager_pg import ManagerPg
+from manager_neo import ManagerNeo
 
 from imanager import Manager
 
@@ -49,20 +53,16 @@ def dequeue_loop(q: Queue, manager: Manager, log_queue: Queue):
 
 
 if __name__ == "__main__":
-    import sys
 
-    args = sys.argv
-    if len(args) != 2:
-        print("Usage: python dequeue.py <pg|neo>")
-        sys.exit(1)
-    db_type = args[1]
+    # args = sys.argv
+    # if len(args) != 2:
+    #     print("Usage: python dequeue.py <pg|neo>")
+    #     sys.exit(1)
+    db_type = os.getenv("DB_TYPE")  # , sys.argv[1])
+    print(f"running {db_type} dequeue")
     if db_type == "pg":
-        from manager_pg import ManagerPg
-
         manager = ManagerPg()
     elif db_type == "neo":
-        from manager_neo import ManagerNeo
-
         manager = ManagerNeo()
     else:
         print("Usage: python dequeue.py <pg|neo>")

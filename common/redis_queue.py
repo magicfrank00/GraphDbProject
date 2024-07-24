@@ -1,11 +1,15 @@
 import redis
+import os
+
+redis_host = os.getenv("REDIS_HOST", "localhost")
+redis_port = os.getenv("REDIS_PORT", 6379)
 
 
 # /etc/init.d/redis-server status
 class Queue:
     def __init__(self, queue_name):
         self.queue_name = queue_name
-        self.r = redis.Redis(host="localhost", port=6379, db=0)
+        self.r = redis.Redis(host=redis_host, port=redis_port, db=0)
 
     def enqueue(self, item):
         self.r.rpush(self.queue_name, item)

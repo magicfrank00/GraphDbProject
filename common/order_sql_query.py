@@ -18,6 +18,8 @@ manufacturer_makes AS (
     FROM manufacturers m
     JOIN makes mk ON mk.Manufacturer_ID = m.ID
     WHERE mk.Product_ID = %s
+    ORDER BY m.ID ASC
+    LIMIT 6
 ),
 
 -- Find all suppliers for the components of the product

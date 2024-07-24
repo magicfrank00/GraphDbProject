@@ -18,12 +18,18 @@ pg = []
 for log in metrics:
     if log["manager"] == "neo":
         neo.append(log["penalty"])
-    else:
+    elif log["manager"] == "pg":
         pg.append(log["penalty"])
+    else:
+        continue
 
 # prefix sum
 neo = np.cumsum([float(x) for x in neo])
 pg = np.cumsum([float(x) for x in pg])
+
+min_len = min(len(neo), len(pg))
+neo = neo[:min_len]
+pg = pg[:min_len]
 
 
 def animate_two_series(y_data1, y_data2, save_path="animation.gif"):
@@ -68,6 +74,6 @@ def animate_two_series(y_data1, y_data2, save_path="animation.gif"):
     print(f"Animation saved to {save_path}")
 
 
-animate_two_series(
-    neo, pg, save_path=f"animations/animation{random.randint(1,10000)}.gif"
-)
+name = f"animation{random.randint(1,10000)}"
+animate_two_series(neo, pg, save_path=f"animations/{name}.gif")
+print(f"Animation saved to animations/{name}.gif")

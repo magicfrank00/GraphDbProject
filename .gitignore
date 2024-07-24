@@ -6,3 +6,4 @@ neo_db_data_backup
 dataset
 dataset_ingest
 *.zip
+postgres

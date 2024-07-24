@@ -26,9 +26,12 @@ class DatabasePg:
     def open(self):
         while True:
             try:
+                host = os.getenv("PG_HOST", "localhost")
+                port = os.getenv("PG_PORT", "5432")
+                print(f"Connecting to {host}:{port}")
                 self.connection = psycopg.connect(
-                    host="localhost",
-                    port="5433",  # 5432
+                    host=host,
+                    port=port,
                     user="supply_chain_user",
                     password=database_pwd,
                     dbname=self.db_name,

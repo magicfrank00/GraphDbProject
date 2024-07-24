@@ -1,7 +1,8 @@
 import time
+import os
 from neo4j import GraphDatabase
 
-DEFAULT_URI = "bolt://localhost:7687"
+DEFAULT_URI = os.getenv("NEO_HOST", "bolt://localhost:7687")
 DEFAULT_USERNAME = "neo4j"
 DEFAULT_PW = "galileo-ski-watch-orchid-plate-1558"
 SUPPLY_DB = "neo4j"

@@ -4,6 +4,9 @@ from redis_queue import Queue
 import time
 from constants import *
 
+
+print("Starting orchestrator...")
+
 random.seed(0)
 
 manufacturer_ids = [201 * N, 201 * N + num_manufacturers]

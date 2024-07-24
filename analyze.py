@@ -1,5 +1,5 @@
 import time
-from redis_queue import Queue
+from common.redis_queue import Queue
 import csv
 
 log_queue = Queue("log_queue")
