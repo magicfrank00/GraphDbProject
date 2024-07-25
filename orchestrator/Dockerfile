@@ -14,4 +14,7 @@ ENV REDIS_HOST=redis
 ENV REDIS_PORT=6379
 ENV PYTHONUNBUFFERED=1 
 
-CMD ["python3", "./orchestrator.py"]
+RUN chmod +x wait.sh
+
+
+CMD ["./wait.sh", "30", "python", "orchestrator.py"]

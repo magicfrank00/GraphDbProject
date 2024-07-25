@@ -6,31 +6,69 @@ services:
         ports:
             - "6379:6379"
 
+    redis_flush:
+        image: redis:latest
+        depends_on:
+            - redis
+        entrypoint: ["redis-cli", "-h", "redis", "FLUSHALL"]
+
     neo4j:
         image: neo4j:latest
         ports:
             - "7474:7474"
             - "7687:7687"
         environment:
+            NEO4J_initial_dbms_default__database: neo4j
             NEO4J_AUTH: neo4j/galileo-ski-watch-orchid-plate-1558
             NEO4J_dbms_directories_data: /data/neo4j_data
-        volumes:
-            - ./neo_db_data:/data/neo4j_data
         healthcheck:
             test: ["CMD", "curl", "-f", "http://localhost:7471"]
             interval: 5s
             timeout: 3s
             retries: 8
+        entrypoint:
+            - sh
+            - -c
+            - |
+                # cd /app
+                # cp ./dataset_ingest/ingest.sh ./
+                # chmod +x ingest.sh
+                # # ./ingest.sh
+                # cd /var/lib/neo4j
+                exec /startup/docker-entrypoint.sh neo4j
 
-    orchestrator:
+        volumes:
+            - dataset_ingest:/app/dataset_ingest
+            - ./neo_db_data_docker:/data/neo4j_data
+
+    postgres:
+        image: postgres:latest
+        container_name: postgres_supply_chain
+        environment:
+            POSTGRES_USER: supply_chain_user
+            POSTGRES_PASSWORD: galileo-ski-watch-orchid-plate-1558
+            POSTGRES_DB: supply_chain
+            PGDATA: /var/lib/postgresql/data/pgdata
+        ports:
+            - "5432:5432"
+        entrypoint: ["sh", "-c", "docker-entrypoint.sh postgres "]
+        restart: always
+
+    generate:
         build:
             context: ./
-            dockerfile: ./orchestrator/Dockerfile
-        depends_on:
-            - redis
+            dockerfile: ./generation/Dockerfile
         environment:
-            REDIS_HOST: redis
-            REDIS_PORT: 6379
+            PG_HOST: postgres
+            PG_PORT: 5432
+            NEO_HOST: bolt://neo4j:7687
+        depends_on:
+            - neo4j
+            - postgres
+        restart: on-failure
+        volumes:
+            - dataset:/app/dataset
+            - dataset_ingest:/app/dataset_ingest
 
     dequeue_neo:
         build:
@@ -44,6 +82,7 @@ services:
         depends_on:
             - redis
             - neo4j
+        restart: on-failure
 
     dequeue_pg:
         build:
@@ -60,22 +99,42 @@ services:
             - postgres
         restart: on-failure
 
-    postgres:
-        image: postgres:15
-        environment:
-            POSTGRES_USER: supply_chain_user
-            POSTGRES_PASSWORD: galileo-ski-watch-orchid-plate-1558
-            POSTGRES_DB: supply_chain
-        volumes:
-            - /var/lib/postgresql/15/main:/var/lib/postgresql/data
-            - ./postgres:/etc/postgresql
-        ports:
-            - "5432:5432"
-        command:
-            ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
-
-    redis_flush:
-        image: redis:latest
+    analyze:
+        build:
+            context: ./
+            dockerfile: ./analyze/Dockerfile
         depends_on:
             - redis
-        entrypoint: ["redis-cli", "-h", "redis", "FLUSHALL"]
+        environment:
+            REDIS_HOST: redis
+            REDIS_PORT: 6379
+        volumes:
+            - ./metrics:/app/metrics
+
+    animate:
+        build:
+            context: ./
+            dockerfile: ./animate/Dockerfile
+        ports:
+            - "5000:5000"
+        environment:
+            FLASK_ENV: development
+        volumes:
+            - ./metrics:/app/metrics
+            - ./animations:/app/animations
+
+    orchestrator:
+        build:
+            context: ./
+            dockerfile: ./orchestrator/Dockerfile
+        depends_on:
+            - redis
+        environment:
+            REDIS_HOST: redis
+            REDIS_PORT: 6379
+
+volumes:
+    dataset:
+        driver: local
+    dataset_ingest:
+        driver: local

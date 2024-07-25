@@ -17,6 +17,7 @@ def log_result(result, processing_time, log_queue, manager_name):
         total_penalty = best_time + TIME_FACTOR * processing_time
 
     total_penalty = round(total_penalty / TIME_FACTOR, 2)
+    total_penalty = max(20, total_penalty)
     log_queue.enqueue(str({"manager": manager_name, "penalty": total_penalty}))
 
 

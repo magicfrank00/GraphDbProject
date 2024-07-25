@@ -7,3 +7,4 @@ dataset
 dataset_ingest
 *.zip
 postgres
+neo_db_data_docker

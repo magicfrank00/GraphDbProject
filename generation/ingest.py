@@ -12,10 +12,14 @@ import os
 drop = True
 
 if drop:
-    drop_db()
-    input("DB cleared,restart the db, Press Enter to continue...")
+    #     drop_db()
+    #     input("DB cleared,restart the db, Press Enter to continue...")
 
     db = Database()
+
+    delete_all = "MATCH (n) DETACH DELETE n"
+
+    db.query(delete_all)
 
     queries = [
         "CREATE CONSTRAINT FOR (p:Product) REQUIRE p.ID IS UNIQUE;",
@@ -32,7 +36,6 @@ else:
 
 
 import csv
-
 
 
 start = time.time()

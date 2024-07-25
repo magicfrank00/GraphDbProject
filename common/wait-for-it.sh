@@ -8,10 +8,10 @@ shift
 port="$1"
 shift
 
-if [ "$DB_TYPE" != "neo" ]; then
-  echo "DB_TYPE is not neo, skipping wait-for-it.sh"
-  exec "$@"
-fi
+# if [ "$DB_TYPE" != "neo" ]; then
+#   echo "DB_TYPE is not neo, skipping wait-for-it.sh"
+#   exec "$@"
+# fi
 
 echo "Waiting for $host:$port"
 until nc -z "$host" "$port"; do
