@@ -18,4 +18,4 @@ RUN chmod +x wait-for-it.sh
 RUN chmod +x wait.sh
 
 
-CMD ["./wait.sh", "8", "python", "dequeue.py"]
+CMD ["./wait.sh", "15", "python", "dequeue.py"]

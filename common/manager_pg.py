@@ -19,7 +19,7 @@ class ManagerPg(Manager):
         best_picks = self.db.query(order_sql_query, params)
         if not best_picks:
             return []
-        [print(pick) for pick in best_picks]
+        # [print(pick) for pick in best_picks]
         return best_picks
 
     def drop(self, id, label):

@@ -30,7 +30,7 @@ class ManagerNeo(Manager):
                 "total_time": pick["total_time"],
             }
             dict_picks.append(dict_pick)
-        [print(pick) for pick in dict_picks]
+        # [print(pick) for pick in dict_picks]
         return dict_picks
 
     def drop(self, id, label):
