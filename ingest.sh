@@ -1,4 +1,5 @@
-python3 ingest_pre.py
+#!/bin/bash
+sleep 3
 neo4j-admin database import full neo4j --overwrite-destination \
   --nodes=Product=dataset_ingest/products-header.csv,dataset_ingest/products.csv \
   --nodes=Component=dataset_ingest/components-header.csv,dataset_ingest/components.csv \
